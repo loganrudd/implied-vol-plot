@@ -7,11 +7,12 @@ from ledgerx_api import get_contracts
 # redistimeseries docs: https://github.com/RedisTimeSeries/redistimeseries-py
 # websocket-client docs: https://github.com/websocket-client/websocket-client
 
-rts = Client(host='localhost')
-r = redis.Redis(host='localhost', decode_responses=True)
+redis_host = 'localhost'
+rts = Client(host=redis_host)
+r = redis.Redis(host=redis_host, decode_responses=True)
 
 # Setup the PUBSUB
-rpub = redis.Redis(host='localhost', decode_responses=True)
+rpub = redis.Redis(host=redis_host, decode_responses=True)
 p = rpub.pubsub()
 
 # Dict to encode update type to int
@@ -29,23 +30,7 @@ update_types = {
     "unauth_success": 10
 }
 
-# unused for now, but is a lookup table for action_report codes to short desc.
-action_report_codes = {
-    200: "limit_insert",
-    201: "trade",
-    202: "unfilled_market_order",
-    203: "cancel",
-    204: "cancel_replace",
-    300: "msg_ack",
-    600: "contract_not_found",
-    601: "mid_not_found",
-    602: "mid_invalid",
-    607: "order_rejected",
-    608: "insufficient_collateral",
-    610: "contract_expired"
-}
 contract_types = {}
-
 
 def on_message(ws, raw_message):
     message = json.loads(raw_message)
