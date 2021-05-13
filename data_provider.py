@@ -1,5 +1,6 @@
 from functools import lru_cache
 from ledgerx_api import get_contracts, get_book_state
+import requests
 import arrow
 
 from market import get_vol, get_price
@@ -9,31 +10,10 @@ option_chain = contracts['option_chain']
 futures = contracts['futures_contracts']
 
 def get_btc_price():
-    # Pulls nearest dated futures and gets the mid price
-    now = arrow.utcnow()
-    closest_expiry = None
-    closest_future = None
-    for future in futures:
-        future_expiry = arrow.get(future['date_expires'])
-
-        if not closest_expiry:
-            closest_expiry = future_expiry
-        if future_expiry > now and (future_expiry - now) < (closest_expiry - now):
-            closest_future = future
-
-    low_ask = 1e9
-    high_bid = 0
-    book_state = get_book_state(closest_future['id'], cache=False)['data']['book_states']
-    for state in book_state:
-        price = state['price']/100
-        if state['is_ask']:
-            if price < low_ask:
-                low_ask = price
-        else:
-            if price > high_bid:
-                high_bid = price
-    mid = (high_bid + low_ask) / 2
-    return(mid)
+    # Get BTC price from Coinbase API
+    resp = requests.get('https://api.coinbase.com/v2/prices/BTC-USD/spot')
+    price = resp.json()['data']['amount']
+    return(price)
 
 
 def get_expirys():
@@ -53,7 +33,7 @@ def get_expirys():
 
 
 @lru_cache()
-def get_expiry_data(expiry_key, option_type, smoothing_factor):
+def get_expiry_data(expiry_key, option_type):
     now = arrow.utcnow()
     expiry_series = option_chain[expiry_key]
     asks = []

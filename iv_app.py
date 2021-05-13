@@ -67,6 +67,7 @@ def init_plots():
 def update_data(attrname, old, new):
     selected_expiry = expiry_select.value
     option_type = option_type_radiobutton.active
+    data = get_expiry_data(selected_expiry, option_type)
 
     # upper price chart
     bid_price, bid_strike, bid_size = zip(*data['bids'])
