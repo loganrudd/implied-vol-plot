@@ -1,5 +1,4 @@
 import requests
-import pandas as pd
 from collections import defaultdict
 import pickle
 from time import sleep
