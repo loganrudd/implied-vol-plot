@@ -1,6 +1,7 @@
 import requests
 from collections import defaultdict
 import pickle
+from functools import lru_cache
 from time import sleep
 
 # https://docs.ledgerx.com/reference
@@ -15,6 +16,14 @@ try:
 except FileNotFoundError:
     print('No "secret" file found, no authorized API requests')
     print('Cached contract information is included in the repo, but newest contract info may be missing')
+
+
+@lru_cache()
+def get_contract(contract_id):
+    # TODO: pickle this into ./contract_info or something
+    url = f'https://api.ledgerx.com/trading/contracts/{contract_id}'
+    resp = requests.get(url, headers=headers).json()
+    print(resp)
 
 
 def get_contracts(active=True):
