@@ -1,3 +1,4 @@
+aredis==1.1.8
 arrow==1.1.0
 bokeh==2.3.2
 certifi==2020.12.5
@@ -18,7 +19,6 @@ pyparsing==2.4.7
 python-dateutil==2.8.1
 pytz==2021.1
 PyYAML==5.4.1
-redis==3.5.3
 redistimeseries==1.4.3
 requests==2.25.1
 rmtest==0.7.0

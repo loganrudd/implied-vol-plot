@@ -55,8 +55,7 @@ for expiry in expiry_labels:
     plot = figure(plot_width=600, plot_height=300)
     plot.yaxis.axis_label = 'IV%'
     plot.xaxis.axis_label = 'Strike'
-    plot.ray(source=btc_price_source, color='cyan', legend_label='BTC Price',
-             length=0, angle=90, angle_units='deg')
+    plot.ray(source=btc_price_source, color='cyan', length=0, angle=90, angle_units='deg')
     plots[expiry] = plot
 
 
