@@ -9,11 +9,12 @@ contracts = get_contracts()
 option_chain = contracts['option_chain']
 futures = contracts['futures_contracts']
 
+
 def get_btc_price():
     # Get BTC price from Coinbase API
     resp = requests.get('https://api.coinbase.com/v2/prices/BTC-USD/spot')
     price = resp.json()['data']['amount']
-    return(price)
+    return price
 
 
 def get_expirys():
@@ -59,10 +60,8 @@ def get_expiry_data(expiry_key, option_type):
         if strike < low_strike:
             low_strike = strike
 
-        # book_state = get_book_state(contract['id'], cache=True)['data']['book_states']
-        # book_state = get_book_state(contract['id'], cache=True)
-        # print('asdf:', book_state)
-
+        book_state = get_book_state(contract['id'], cache=True)['data']['book_states']
+        print('asdf:', book_state)
 
         high_bid = 0
         low_ask = 10e9

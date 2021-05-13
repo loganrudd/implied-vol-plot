@@ -10,6 +10,14 @@ headers = {
     "Accept": "application/json",
 }
 
+try:
+    api_key = str(open("secret", "r").readline()).strip()
+    headers['Authorization'] = f"JWT {api_key}"
+except FileNotFoundError:
+    print('No "secret" file found, no authorized API requests')
+    print('Cached contract information is included in the repo, but newest contract info may be missing')
+
+
 def get_contracts(active=True):
     # defaultdict(list) so we can just append() contracts to the dict date keys
     # Key: Date string, item: option contract dict
@@ -48,19 +56,16 @@ def get_contracts(active=True):
     }
 
     try:
-        # Delete contracts.pkl to re-download
         contracts = pickle.load(open('contracts.pkl', 'rb'))
         print('Loading contracts from pickle cache...')
-
     except FileNotFoundError:
         print('Downloading contracts from LedgerX... Please Wait...')
         recurse_contracts()
         pickle.dump(contracts, open('contracts.pkl', 'wb'))
-
     return contracts
 
 
-def get_book_state(id, cache=False):
+def get_book_state(id, cache=True):
 
     def get_state():
         url = f"https://trade.ledgerx.com/api/book-states/{id}"
@@ -75,50 +80,13 @@ def get_book_state(id, cache=False):
             book_state = get_state()
             pickle.dump(book_state, open(f'./book_states/{id}.pkl', 'wb'))
             return book_state
-
     return get_state()
 
 
-def get_trade_history():
-    trade_history = []
-
-    def recurse_trades(url="https://api.ledgerx.com/trading/trades"):
-        resp = requests.get(url, headers=headers).json()
-        data = resp['data']
-
-        # meta has information on how large the whole dataset is and next page URL
-        meta = resp['meta']
-
-        for trade in data:
-            trade_history.append(trade)
-
-        # Check if there's another page
-        next_url = meta['next']
-        if next_url:
-            sleep(0.1)
-            recurse_trades(next_url)
-
-    try:
-        # Delete trade_history.pkl to re-download
-        trade_history = pickle.load(open('trade_history.pkl', 'rb'))
-        print('Loading trades from pickle cache...')
-
-    except FileNotFoundError:
-        print('Downloading trade history from LedgerX... Please Wait...')
-        recurse_trades()
-        pickle.dump(trade_history, open('trade_history.pkl', 'wb'))
-
-    return trade_history
-
-
 if __name__ == "__main__":
-    # Goal with this is to build an orderbook on our side that gets updated with their websocket endpoint
-    # the get_contracts() function returns a pretty big chunk of data (over 7000 entries with tens of properties per)
+    # Module test -- no utility besides testing
     contracts = get_contracts()
     option_chain = contracts['option_chain']
-    
-    # Looks like they have all their expired contracts listed too, back to 10/27/2017 at the end
-    print(option_chain.keys())
 
     # This is the April 30th expiration
     expiry_str = '2021-04-30 20:00:00+0000'
@@ -131,5 +99,4 @@ if __name__ == "__main__":
         book = get_book_state(contract['id'])
         sleep(0.5)
         for entry in book['data']['book_states']:
-            # TODO: save data to DB, MongoDB, Redis whatever to be updated by websocket
             print(entry)
