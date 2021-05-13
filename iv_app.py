@@ -80,13 +80,15 @@ layout = column(children=layout_rows)
 def update_data(data):
     # TODO: take the data and feed it into charts -- from ledgerx_ws.py publisher
     #  maybe we want to have all the expirations displayed at once
-    print(data)
+    print('update_data:', data)
 
 
 async def sub_listener():
+    await p.psubscribe('*.1')
+
     while True:
         msg = await p.get_message()
-        print(msg)
+        print('sub_listener:', msg)
         doc.add_next_tick_callback(partial(update_data, msg))
 
 
@@ -95,5 +97,4 @@ doc.theme = 'night_sky'
 doc.add_root(layout)
 doc.title = "IV Chart"
 
-asyncio.ensure_future(p.psubscribe('*.1'))
 asyncio.ensure_future(sub_listener())

@@ -1,6 +1,7 @@
 import os
 import websocket
 import json
+import asyncio
 from aredis import StrictRedis
 # from redistimeseries.client import Client
 from ledgerx_api import get_contracts
@@ -40,10 +41,8 @@ def on_message(ws, raw_message):
             channel = f"{ws_contract_id}.{update_type}.{message['status_type']}"
         else:
             channel = f"{ws_contract_id}.{update_type}"
-
-        print(f'publish {channel}: {raw_message}')
-        r.publish(channel, raw_message)
-
+            print(f'publish {channel}: {raw_message}')
+            asyncio.run(r.publish(channel, raw_message))
     except KeyError:
         print('Unknown data format:')
         print(message)
