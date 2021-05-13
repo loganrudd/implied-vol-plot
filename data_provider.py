@@ -59,7 +59,7 @@ def get_expiry_data(expiry_key, option_type):
         if strike < low_strike:
             low_strike = strike
 
-        book_state = get_book_state(contract['id'], cache=True)['data']['book_states']
+        # book_state = get_book_state(contract['id'], cache=True)['data']['book_states']
         # book_state = get_book_state(contract['id'], cache=True)
         # print('asdf:', book_state)
 

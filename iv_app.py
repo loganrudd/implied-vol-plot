@@ -1,9 +1,15 @@
 from bokeh.io import curdoc
 from bokeh.layouts import column, row
-from bokeh.models import ColumnDataSource, Select, RadioButtonGroup, Slider
+from bokeh.models import ColumnDataSource, Select, RadioButtonGroup
 from bokeh.plotting import figure
 
 from data_provider import get_expirys, get_expiry_data
+import redis
+
+r = redis.Redis(host='localhost')
+p = r.pubsub()
+p.psubscribe('*.1')
+
 '''
 IV Chart Bokeh App
 
@@ -39,8 +45,6 @@ btc_price_source = ColumnDataSource()
 
 
 def init_plots():
-    # setting expiry_select value triggers update_data
-    # initializing plot data sources(also had to do it because of maybe a bug in bokeh)
     expiry_select.value = expiry_keys[0]
 
     # Labels
@@ -63,37 +67,21 @@ def init_plots():
                 length=0, angle=90, angle_units='deg')
 
 
-# Callbacks and event setup
-def update_data(attrname, old, new):
-    selected_expiry = expiry_select.value
-    option_type = option_type_radiobutton.active
-    data = get_expiry_data(selected_expiry, option_type)
+# expiry_select.on_change('value', update_data)
+# option_type_radiobutton.on_change('active', update_data)
 
-    # upper price chart
-    bid_price, bid_strike, bid_size = zip(*data['bids'])
-    ask_price, ask_strike, ask_size = zip(*data['asks'])
-    theo_strike, theo_price = zip(*data['theo'])
-    bid_source.data = dict(x=bid_strike, y=bid_price)
-    ask_source.data = dict(x=ask_strike, y=ask_price)
-    theo_source.data = dict(x=theo_strike, y=theo_price)
+def update_data(data):
+    # TODO: take the data and feed it into charts
+    #  maybe we want to have all the expirations displayed at once
+    print(data)
 
-    # BTC price marker
-    btc_price_source.data = dict(x=[data['btc_price']], y=[0])
-
-    # lower IV chart
-    iv_strike, iv_pts = zip(*data['ivs'])
-    bid_iv_strike, bid_iv_pts = zip(*data['bid_iv'])
-    ask_iv_strike, ask_iv_pts = zip(*data['ask_iv'])
-    bid_iv_source.data = dict(x=bid_iv_strike, y=bid_iv_pts)
-    ask_iv_source.data = dict(x=ask_iv_strike, y=ask_iv_pts)
-    iv_pts_source.data = dict(x=iv_strike, y=iv_pts)
-
-
-expiry_select.on_change('value', update_data)
-option_type_radiobutton.on_change('active', update_data)
 
 init_plots()
 
 curdoc().theme = 'night_sky'
 curdoc().add_root(layout)
 curdoc().title = "IV Chart"
+
+
+for msg in p.listen():
+    curdoc().add_next_tick_callback(update_data(msg))

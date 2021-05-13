@@ -11,10 +11,6 @@ redis_host = 'localhost'
 # rts = Client(host=redis_host)
 r = redis.Redis(host=redis_host, decode_responses=True)
 
-# Setup the PUBSUB
-rpub = redis.Redis(host=redis_host, decode_responses=True)
-p = rpub.pubsub()
-
 # Dict to encode update type to int
 update_types = {
     "action_report": 0,
@@ -39,11 +35,12 @@ def on_message(ws, raw_message):
         ws_contract_id = message['contract_id']
 
         # Publish websocket message to PUBSUB channel
-        if update_type == 1:
+        if update_type == 0:
             channel = f"{ws_contract_id}.{update_type}.{message['status_type']}"
         else:
             channel = f"{ws_contract_id}.{update_type}"
-        p.publish(channel, raw_message)
+        print(f'publish {channel}: {raw_message}')
+        r.publish(channel, raw_message)
 
         if update_type == 1:
             # book_top
@@ -57,7 +54,7 @@ def on_message(ws, raw_message):
 
     except KeyError:
         print('***** No "type" or unknown type in message:')
-        print(message)
+        #print(message)
 
 
 def on_error(ws, error):
@@ -119,5 +116,4 @@ if __name__ == "__main__":
                                         on_error=on_error,
                                         on_close=on_close)
 
-    while True:
-        ledgerx_ws.run_forever(ping_interval=25)
+    ledgerx_ws.run_forever(ping_interval=25)
