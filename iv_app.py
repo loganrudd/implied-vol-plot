@@ -2,6 +2,7 @@ from bokeh.io import curdoc
 from bokeh.layouts import column, row
 from bokeh.models import ColumnDataSource, Select, RadioButtonGroup
 from bokeh.plotting import figure
+from multiprocessing import Process
 
 from data_provider import get_expirys, get_expiry_data
 import redis
@@ -20,6 +21,8 @@ Good Example: https://github.com/bokeh/bokeh/blob/branch-2.4/examples/app/stocks
 
 Looking to plot bid/ask and theoretical price (and orders eventually)
 '''
+# Main Bokeh Doc
+doc = curdoc()
 
 # Figures
 price_plot = figure(plot_width=800, plot_height=300)
@@ -30,7 +33,6 @@ expirys = get_expirys()
 expiry_keys, expiry_labels = zip(*expirys)
 expiry_select = Select(value=expiry_labels[0], options=expirys)
 option_type_radiobutton = RadioButtonGroup(labels=['Calls', 'Puts'], active=1)
-
 top_controls = row(expiry_select, option_type_radiobutton)
 layout = column(top_controls, price_plot, iv_plot)
 
@@ -76,12 +78,18 @@ def update_data(data):
     print(data)
 
 
-init_plots()
+def sub_listener():
+    for msg in p.listen():
+        curdoc().add_next_tick_callback(update_data(msg))
 
-curdoc().theme = 'night_sky'
+
+# Initialize Bokeh plot
+init_plots()
+doc.theme = 'night_sky'
 curdoc().add_root(layout)
 curdoc().title = "IV Chart"
 
-
-for msg in p.listen():
-    curdoc().add_next_tick_callback(update_data(msg))
+# Start separate process to listen to PUBSUB channel
+sub_process = Process(target=sub_listener)
+sub_process.start()
+# sub_process.join()
