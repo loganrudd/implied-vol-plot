@@ -18,3 +18,9 @@ To run image interactively, mapping port 5006 from the container to 5006 on your
 
 To run it in the background in detached mode:
 `sudo docker run -d -p 5006:5006 -w "/implied-vol-plot" -v "$(pwd):/implied-vol-plot" iv_app:dev`
+
+Docker-compose:
+
+To start services: `docker-compose up` #can add -d flag to run in background
+To stop services: `docker-compose down`
+To run a specific service interactively: `docker-compose exec <name-of-service-in-docker-compose-yaml> sh`

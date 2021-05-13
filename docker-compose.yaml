@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+    implied-vol-plot:
+        image: iv_app:dev
+        ports:
+            5006:5006
+        working_dir: /implied-vol-plot
+        environment:
+            # These env vars are just a guess of what we might need
+            REDIS_HOST:
+            REDIS_USER:
+            REDIS_PASSWORD:
+            REDIS_DB:
+
+    redisTimeSeries:
+        image: redislabs/redistimeseries:latest
+        volumes:
+            - redis-logs: #path to where redis logs are typically found
+        environment:
+            # These env vars are just a guess of what we might need
+            REDIS_HOST:
+            REDIS_USER:
+            REDIS_PASSWORD:
+            REDIS_DB:
+
+volumes:
+    redis-logs:
