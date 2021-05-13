@@ -1,13 +1,14 @@
 from bokeh.io import curdoc
 from bokeh.layouts import column, row
-from bokeh.models import ColumnDataSource, AjaxDataSource, CustomJS
+from bokeh.models import AjaxDataSource, CustomJS
 from bokeh.plotting import figure
 import redis
 
 from multiprocessing import Process
-from time import sleep
+from math import ceil
+from collections import defaultdict
 
-from data_provider import get_btc_price, get_expirys, get_expiry_data
+from data_provider import get_expirys
 
 r = redis.Redis(host='localhost')
 p = r.pubsub()
@@ -25,70 +26,60 @@ Live plot bid/mid/ask IV and BTC price
 # Main Bokeh Doc
 doc = curdoc()
 
-# Figures
-iv_plot = figure(plot_width=800, plot_height=300)
-
-# Controls
-expirys = get_expirys()
-expiry_keys, expiry_labels = zip(*expirys)
-# expiry_select = Select(value=expiry_labels[0], options=expirys)
-# option_type_radiobutton = RadioButtonGroup(labels=['Calls', 'Puts'], active=1)
-# top_controls = row(expiry_select, option_type_radiobutton)
-
-# TODO: loop over expirations and make a grid of plots
-layout = column(iv_plot)
-
+# Bitcoin price datasource
 adapter = CustomJS(code="""
     var price = cb_data.response['data']['amount']
     var data = {x: [price], y: [0]}
     console.log(price)
     return data 
 """)
-
-# Datasources
-#theo_source = ColumnDataSource()
-#iv_pts_source = ColumnDataSource()
-#bid_iv_source = ColumnDataSource()
-#ask_iv_source = ColumnDataSource()
 btc_price_source = AjaxDataSource(data_url='https://api.coinbase.com/v2/prices/BTC-USD/spot',
                                   method='GET',
                                   polling_interval=3000, adapter=adapter)
 
 
-def init_plots():
-    # Labels
-    iv_plot.yaxis.axis_label = 'IV%'
-    iv_plot.xaxis.axis_label = 'Strike'
+# Controls
+expirys = get_expirys()
+expiry_keys, expiry_labels = zip(*expirys)
+# option_type_radiobutton = RadioButtonGroup(labels=['Calls', 'Puts'], active=1)
+# top_controls = row(option_type_radiobutton)
 
-    # iv_plot.x(source=iv_pts_source, color='yellow', legend_label='Mid IV')
-    # iv_plot.triangle(source=ask_iv_source, angle=3.14, color='red', fill_color='red', legend_label='Ask IV')
-    # iv_plot.triangle(source=bid_iv_source, fill_color='blue', legend_label='Bid IV')
+# Loop over expirations and make grid of plots
+plots = {}
 
-    # Line for BTC price
-    iv_plot.ray(source=btc_price_source, color='cyan', legend_label='BTC Price',
-                length=0, angle=90, angle_units='deg')
+# TODO: Fix issue with browser console error: could not set initial ranges, have y-axis 0 at bottom and locked, etc
+for expiry in expiry_labels:
+    plot = figure(plot_width=600, plot_height=300)
+    plot.yaxis.axis_label = 'IV%'
+    plot.xaxis.axis_label = 'Strike'
+    plot.ray(source=btc_price_source, color='cyan', legend_label='BTC Price',
+             length=0, angle=90, angle_units='deg')
+    plots[expiry] = plot
 
-# option_type_radiobutton.on_change('active', update_data)
+num_rows = ceil(len(expiry_labels) / 3)
+
+rows = defaultdict(list)
+for n_row in range(0, num_rows):
+    for n_column in range(0, 3):
+        try:
+            expiry = expiry_labels[(n_row * 3) + n_column]
+            rows[n_row].append(plots[expiry])
+        except IndexError:
+            print('end of expirys')
+            continue
+
+layout_rows = []
+for row_k in rows.keys():
+    layout_rows.append(row(children=rows[row_k]))
+
+layout = column(children=layout_rows)
 
 
 def update_data(data):
-    # TODO: take the data and feed it into charts
+    # TODO: take the data and feed it into charts -- from ledgerx_ws.py publisher
     #  maybe we want to have all the expirations displayed at once
     # print(data)
     return
-
-
-def btc_price_poller():
-    def update_datasource():
-        global btc_price_source
-
-        price = float(get_btc_price())
-        print(price)
-        btc_price_source.data = dict(x=[price], y=[0])
-        sleep(3)
-
-    while True:
-        doc.add_next_tick_callback(update_datasource)
 
 
 def sub_listener():
@@ -97,13 +88,9 @@ def sub_listener():
 
 
 # Initialize Bokeh plot
-init_plots()
 doc.theme = 'night_sky'
 doc.add_root(layout)
 doc.title = "IV Chart"
-
-# Polling datasource for BTC price
-
 
 sub_process = Process(target=sub_listener)
 sub_process.start()
