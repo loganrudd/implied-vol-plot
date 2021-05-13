@@ -2,13 +2,13 @@ import os
 import redis
 import websocket
 import json
-from redistimeseries.client import Client
+# from redistimeseries.client import Client
 from ledgerx_api import get_contracts
 # redistimeseries docs: https://github.com/RedisTimeSeries/redistimeseries-py
 # websocket-client docs: https://github.com/websocket-client/websocket-client
 
 redis_host = 'localhost'
-rts = Client(host=redis_host)
+# rts = Client(host=redis_host)
 r = redis.Redis(host=redis_host, decode_responses=True)
 
 # Setup the PUBSUB
@@ -48,7 +48,7 @@ def on_message(ws, raw_message):
         if update_type == 1:
             # book_top
             data_tuples = [(f'{contract_id}:{side}', '*', message[side]) for side in ['bid', 'ask']]
-            rts.madd(data_tuples)
+            # rts.madd(data_tuples)
 
         elif update_type in [2, 3, 4, 5, 6, 7, 8, 9, 10]:
             # auth_success, heartbeat, account stats, etc...
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     print('needs_ts', needs_ts)
     for needy_contract_id in needs_ts:
         for side in ['bid', 'ask']:
-            rts.create(f'{needy_contract_id}:{side}', labels={'contract_id': needy_contract_id})
+            # rts.create(f'{needy_contract_id}:{side}', labels={'contract_id': needy_contract_id})
             r.sadd('has_ts', needy_contract_id)
             print(f'adding {needy_contract_id}...')
 
