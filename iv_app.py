@@ -40,7 +40,6 @@ btc_price_source = AjaxDataSource(data_url='https://api.coinbase.com/v2/prices/B
                                   method='GET',
                                   polling_interval=3000, adapter=adapter)
 
-
 # Controls
 expirys = get_expirys()
 expiry_keys, expiry_labels = zip(*expirys)
@@ -79,7 +78,10 @@ layout = column(children=layout_rows)
 
 
 def update_data(msg):
-    process_message(msg)
+    data = process_message(msg)
+    if data:
+        print(data)
+
 
 
 async def sub_listener():

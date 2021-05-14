@@ -23,6 +23,7 @@ def get_contract(contract_id):
     # TODO: pickle this into ./contract_info or something
     url = f'https://api.ledgerx.com/trading/contracts/{contract_id}'
     resp = requests.get(url, headers=headers).json()
+    return resp
 
 
 def get_contracts(active=True):
@@ -33,7 +34,7 @@ def get_contracts(active=True):
     futures_contracts = []
 
     def recurse_contracts(url="https://api.ledgerx.com/trading/contracts"):
-        resp = requests.get(url, headers=headers, params=dict(active=active)).json()
+        resp = requests.get(url, headers=headers, params=dict(active=active, derivative_type='options_contract')).json()
         data = resp['data']
 
         # meta has information on how large the whole dataset is and next page URL
