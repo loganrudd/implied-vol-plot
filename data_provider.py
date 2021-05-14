@@ -1,6 +1,7 @@
 from functools import lru_cache
 from ledgerx_api import get_contracts, get_book_state
 import requests
+import json
 import arrow
 
 from market import get_vol, get_price
@@ -8,6 +9,30 @@ from market import get_vol, get_price
 contracts = get_contracts()
 option_chain = contracts['option_chain']
 futures = contracts['futures_contracts']
+
+
+def load_id_table():
+    # loads id_table to look up (strike, type) tuple from contract_id key
+    with open('id_table.json', 'r') as f:
+        raw_json = f.read()
+        id_table = json.loads(raw_json)
+    return id_table
+
+id_table = load_id_table()
+
+
+def write_id_table(id_table=None):
+    if not id_table:
+        id_table = {}
+        options = get_contracts(active=True)['option_chain']
+        for expiry in options.keys():
+            for option in options[expiry]:
+                id_table[option['id']] = (option['strike_price'], option['type'])
+
+    with open('id_table.json', 'w') as f:
+        f.write(json.dumps(id_table))
+        print(id_table)
+        print('...written to id_table.json')
 
 
 def get_btc_price():

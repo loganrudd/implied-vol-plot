@@ -5,13 +5,12 @@ from bokeh.plotting import figure
 from aredis import StrictRedis
 
 import asyncio
-import json
 from math import ceil
 from collections import defaultdict
 from functools import partial
 
+from process_message import process_message
 from data_provider import get_expirys
-from ledgerx_api import get_contract
 
 '''
 IV Chart Bokeh App
@@ -80,18 +79,7 @@ layout = column(children=layout_rows)
 
 
 def update_data(msg):
-    # TODO: take the data and feed it into charts -- from ledgerx_ws.py publisher
-
-    if msg['data'] != 1:
-        data = json.loads(msg['data'])
-        contract_id = data['contract_id']
-        bid, ask = data['bid']/100, data['ask']/100
-        print(contract_id, bid, ask)
-
-        # TODO: get get_contract(contract_id) to speed up, using lrucache right now,
-        #  could be combined with pickling responses (even into redis) so cache will persist
-        contract_info = get_contract(contract_id)
-        print(contract_info)
+    process_message(msg)
 
 
 async def sub_listener():

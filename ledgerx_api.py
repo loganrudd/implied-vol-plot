@@ -23,7 +23,6 @@ def get_contract(contract_id):
     # TODO: pickle this into ./contract_info or something
     url = f'https://api.ledgerx.com/trading/contracts/{contract_id}'
     resp = requests.get(url, headers=headers).json()
-    print(resp)
 
 
 def get_contracts(active=True):
