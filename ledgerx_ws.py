@@ -32,12 +32,9 @@ def on_message(ws, raw_message):
     try:
         ws_contract_id = message['contract_id']
         clock = message['clock']
-        #if clock != prev_clock and message['type'] == 1:
+
         # Publish websocket message to PUBSUB channel
-        #if update_type != 0:
         channel = f"{ws_contract_id}.1"
-        # asyncio.run(r.publish(channel, raw_message))
-        # r.publish(channel, raw_message)
         cond_pub(keys=[f'{ws_contract_id}:clock'], args=[clock, channel, raw_message])
     except KeyError:
         print('Unknown data format:')

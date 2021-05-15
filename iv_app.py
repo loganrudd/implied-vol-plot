@@ -1,6 +1,6 @@
 from bokeh.io import curdoc
 from bokeh.layouts import column, row
-from bokeh.models import AjaxDataSource, ColumnDataSource, CustomJS
+from bokeh.models import AjaxDataSource, ColumnDataSource, CustomJS, RadioButtonGroup
 from bokeh.plotting import figure
 from aredis import StrictRedis
 
@@ -10,7 +10,7 @@ from collections import defaultdict
 from functools import partial
 
 from process_message import process_message
-from data_provider import get_expirys
+from data_provider import get_expirys, load_id_table
 
 '''
 IV Chart Bokeh App
@@ -42,35 +42,50 @@ btc_price_source = AjaxDataSource(data_url='https://api.coinbase.com/v2/prices/B
 
 # Controls
 expirys = get_expirys()
+print(expirys)
 expiry_keys, expiry_labels = zip(*expirys)
-# option_type_radiobutton = RadioButtonGroup(labels=['Calls', 'Puts'], active=1)
-# top_controls = row(option_type_radiobutton)
+option_type_radiobutton = RadioButtonGroup(labels=['Calls', 'Puts'], active=1)
+top_controls = row(option_type_radiobutton)
+
+# load id_table so we can generate our DataColumnSources from it
+# data_sources[<'put' | 'call'>][expiration][<'bid' | 'ask'>] retrieves a ColumnDataSource of scheme:
+# {'x': <strike prices>, 'y': <IV%>}
+data_sources = defaultdict(partial(defaultdict, dict))
+id_table = load_id_table()
+for option_type in ['call', 'put']:
+    for expiry in expiry_keys:
+        for contract_id in id_table.keys():
+            contract_expiry = id_table[contract_id][0]
+            contract_strike = id_table[contract_id][1]
+            contract_option_type = id_table[contract_id][2]
+            if contract_option_type == option_type and contract_expiry == expiry:
+                data_sources[option_type][expiry]['bid'] = ColumnDataSource()
+                data_sources[option_type][expiry]['ask'] = ColumnDataSource()
 
 # Loop over expirations and make grid of plots
 # one plot per expiration (6 of them, two rows of 3)
 plots = {}
-
 # TODO: Fix issue with browser console error: could not set initial ranges, have y-axis 0 at bottom and locked, etc
-for expiry in expiry_labels:
-    plot = figure(plot_width=600, plot_height=300)
+for expiry_key, expiry_label in expirys:
+    plot = figure(title=f'{expiry_label} Expiration', plot_width=600, plot_height=300)
     plot.yaxis.axis_label = 'IV%'
     plot.xaxis.axis_label = 'Strike'
     plot.ray(source=btc_price_source, color='cyan', length=0, angle=90, angle_units='deg')
-    plots[expiry] = plot
+    plots[expiry_key] = plot
 
 
 rows = defaultdict(list)
-num_rows = ceil(len(expiry_labels) / 3)
+num_rows = ceil(len(expiry_keys) / 3)
 for n_row in range(0, num_rows):
     for n_column in range(0, 3):
         try:
-            expiry = expiry_labels[(n_row * 3) + n_column]
+            expiry = expiry_keys[(n_row * 3) + n_column]
             rows[n_row].append(plots[expiry])
         except IndexError:
             print('end of expirys')
             continue
 
-layout_rows = []
+layout_rows = [top_controls]
 for row_k in rows.keys():
     layout_rows.append(row(children=rows[row_k]))
 
