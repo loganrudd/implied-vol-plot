@@ -1,7 +1,8 @@
 import websocket
 import json
 import asyncio
-from aredis import StrictRedis
+# from aredis import StrictRedis
+import redis
 # from redistimeseries.client import Client
 from ledgerx_api import get_contracts
 # redistimeseries docs: https://github.com/RedisTimeSeries/redistimeseries-py
@@ -9,44 +10,35 @@ from ledgerx_api import get_contracts
 
 redis_host = 'localhost'
 # rts = Client(host=redis_host)
-r = StrictRedis(host=redis_host, decode_responses=True)
+r = redis.Redis(host=redis_host, decode_responses=True)
 
-# Dict to encode update type to int
-update_types = {
-    "action_report": 0,
-    "book_top": 1,
-    "auth_success": 2,
-    "heartbeat": 3,
-    "collateral_balance_update": 4,
-    "open_positions_update": 5,
-    "exposure_reports": 6,
-    "contract_added": 7,
-    "contract_removed": 8,
-    "trade_busted": 9,
-    "unauth_success": 10
-}
-
-contract_types = {}
-prev_clock = 0
+# Lua script to do a conditional publish (only clock > prev_clock)
+lua_cond_pub = """
+local prev_clock = redis.call('GETSET', KEYS[1], ARGV[1])
+local clock = tonumber(ARGV[1])
+prev_clock = tonumber(prev_clock)
+if(clock > prev_clock) then
+    redis.call('PUBLISH', ARGV[2], ARGV[3])
+    return 1
+else
+    return 0
+end
+"""
+cond_pub = r.register_script(lua_cond_pub)
 
 
 def on_message(ws, raw_message):
-    global prev_clock
     message = json.loads(raw_message)
     try:
-        update_type = update_types[message['type']]
         ws_contract_id = message['contract_id']
-        if message['clock'] == prev_clock:
-            return
-        prev_clock = message['clock']
-
+        clock = message['clock']
+        #if clock != prev_clock and message['type'] == 1:
         # Publish websocket message to PUBSUB channel
-        if update_type == 0:
-            channel = f"{ws_contract_id}.{update_type}.{message['status_type']}"
-        else:
-            channel = f"{ws_contract_id}.{update_type}"
-            print(f'publish {channel}: {raw_message}')
-            asyncio.run(r.publish(channel, raw_message))
+        #if update_type != 0:
+        channel = f"{ws_contract_id}.1"
+        # asyncio.run(r.publish(channel, raw_message))
+        # r.publish(channel, raw_message)
+        cond_pub(keys=[f'{ws_contract_id}:clock'], args=[clock, channel, raw_message])
     except KeyError:
         print('Unknown data format:')
         print(message)

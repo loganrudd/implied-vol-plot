@@ -80,7 +80,7 @@ layout = column(children=layout_rows)
 def update_data(msg):
     data = process_message(msg)
     if data:
-        print(data)
+        print('data:', data)
 
 
 async def sub_listener():
