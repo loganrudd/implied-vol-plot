@@ -1,6 +1,6 @@
 from bokeh.io import curdoc
 from bokeh.layouts import column, row
-from bokeh.models import AjaxDataSource, CustomJS
+from bokeh.models import AjaxDataSource, ColumnDataSource, CustomJS
 from bokeh.plotting import figure
 from aredis import StrictRedis
 
@@ -81,7 +81,6 @@ def update_data(msg):
     data = process_message(msg)
     if data:
         print(data)
-
 
 
 async def sub_listener():

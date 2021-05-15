@@ -1,4 +1,3 @@
-import os
 import websocket
 import json
 import asyncio
@@ -28,13 +27,18 @@ update_types = {
 }
 
 contract_types = {}
+prev_clock = 0
 
 
 def on_message(ws, raw_message):
+    global prev_clock
     message = json.loads(raw_message)
     try:
         update_type = update_types[message['type']]
         ws_contract_id = message['contract_id']
+        if message['clock'] == prev_clock:
+            return
+        prev_clock = message['clock']
 
         # Publish websocket message to PUBSUB channel
         if update_type == 0:
