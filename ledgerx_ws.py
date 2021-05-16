@@ -1,7 +1,5 @@
 import websocket
 import json
-import asyncio
-# from aredis import StrictRedis
 import redis
 # from redistimeseries.client import Client
 from ledgerx_api import get_contracts
@@ -58,7 +56,7 @@ if __name__ == "__main__":
     # websocket.enableTrace(True)
     # Initialize database state:
     # get currently active contracts
-    contracts = get_contracts()
+    contracts = get_contracts(active=True)
     option_chain = contracts['option_chain']
 
     # Loop over options

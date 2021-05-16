@@ -15,6 +15,7 @@ def get_vol(attrs):
     strike = attrs['strike']
     flag = attrs['flag']
     try:
+        # print(option_price, ul_price, strike, dte, interest, flag)
         iv = implied_volatility(option_price, ul_price, strike, dte/365, interest, flag)
     except BelowIntrinsicException:
         # print('Below Intrinsic: return NaN')

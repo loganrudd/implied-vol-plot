@@ -32,7 +32,7 @@ def process_message(msg):
         if contract_id in id_table.keys():
             expiry, strike, option_type = id_table[contract_id]
             contract_update['expiry'] = expiry
-            contract_update['strike'] = strike / 100
+            contract_update['strike'] = strike
             contract_update['type'] = option_type
         else:
             print(f'{contract_id}: not in id_table')
@@ -48,7 +48,7 @@ def process_message(msg):
                 print('new contract, caching data:')
                 print(api_data)
                 expiry = api_data['date_expires']
-                strike = api_data['strike_price'] / 100
+                strike = api_data['strike_price']
                 option_type = api_data['type']
                 id_table[contract_id] = (expiry, strike, option_type)
                 contract_update['expiry'] = expiry

@@ -44,7 +44,6 @@ btc_price_source = AjaxDataSource(data_url='https://api.coinbase.com/v2/prices/B
 
 # Controls
 expirys = get_expirys()
-print(expirys)
 expiry_keys, expiry_labels = zip(*expirys)
 option_type_radiobutton = RadioButtonGroup(labels=['Calls', 'Puts'], active=1)
 top_controls = row(option_type_radiobutton)
@@ -109,13 +108,16 @@ async def update_data(msg):
         # print('data:', data)
         ws_option_type = data['type']
         ws_expiry = data['expiry']
-        ws_strike = data['strike']
+        ws_strike = data['strike'] / 100
         ws_bid = data['bid']
         ws_ask = data['ask']
         dte = (arrow.get(ws_expiry) - now).days
 
-        # TODO: actually calculate IV%
-        ul_price = float(btc_price_source.data['x'][0])
+        try:
+            ul_price = float(btc_price_source.data['x'][0])
+        except KeyError:
+            return
+
         bid_iv = get_vol(dict(price=ws_bid,
                               ul_price=ul_price,
                               dte=dte,
@@ -135,16 +137,13 @@ async def update_data(msg):
 
         bid_data = await r.hgetall(bid_key)
         ask_data = await r.hgetall(ask_key)
-        bid_x = [float(k) for k in bid_data.keys()]
+        strikes = [float(k) for k in bid_data.keys()]
         bid_y = [float(k) for k in bid_data.values()]
-        ask_x = [float(k) for k in ask_data.keys()]
         ask_y = [float(k) for k in ask_data.values()]
-        bid_x, bid_y = zip(*sorted(zip(bid_x, bid_y)))
-        ask_x, ask_y = zip(*sorted(zip(ask_x, ask_y)))
-        print(bid_x, bid_y)
-        print(ask_x, ask_y)
-        data_sources[ws_option_type][ws_expiry]['bid'].data = dict(x=bid_x, y=bid_y)
-        data_sources[ws_option_type][ws_expiry]['ask'].data = dict(x=ask_x, y=ask_y)
+        strikes, bid_y = zip(*sorted(zip(strikes, bid_y)))
+        strikes, ask_y = zip(*sorted(zip(strikes, ask_y)))
+        data_sources[ws_option_type][ws_expiry]['bid'].data = dict(x=strikes, y=bid_y)
+        data_sources[ws_option_type][ws_expiry]['ask'].data = dict(x=strikes, y=ask_y)
 
 
 async def sub_listener():
