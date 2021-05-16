@@ -139,8 +139,8 @@ async def update_data(msg):
         bid_y = bid_data.values()
         ask_x = ask_data.keys()
         ask_y = ask_data.values()
-        data_sources[ws_option_type][ws_expiry]['bid'] = dict(x=bid_x, y=bid_y)
-        data_sources[ws_option_type][ws_expiry]['ask'] = dict(x=ask_x, y=ask_y)
+        data_sources[ws_option_type][ws_expiry]['bid'].data = dict(x=bid_x, y=bid_y)
+        data_sources[ws_option_type][ws_expiry]['ask'].data = dict(x=ask_x, y=ask_y)
 
 
 async def sub_listener():
