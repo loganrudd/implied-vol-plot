@@ -9,7 +9,6 @@ interest = 0.005
 
 
 def get_vol(attrs):
-    print(attrs)
     option_price = attrs['price']
     ul_price = attrs['ul_price']
     dte = attrs['dte']
@@ -21,7 +20,7 @@ def get_vol(attrs):
         # print('Below Intrinsic: return NaN')
         iv = np.nan
     except AboveMaximumException:
-        print('Vol above max value')
+        # print('Vol above max value')
         iv = np.nan
     return iv
 

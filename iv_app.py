@@ -135,10 +135,14 @@ async def update_data(msg):
 
         bid_data = await r.hgetall(bid_key)
         ask_data = await r.hgetall(ask_key)
-        bid_x = bid_data.keys()
-        bid_y = bid_data.values()
-        ask_x = ask_data.keys()
-        ask_y = ask_data.values()
+        bid_x = [float(k) for k in bid_data.keys()]
+        bid_y = [float(k) for k in bid_data.values()]
+        ask_x = [float(k) for k in ask_data.keys()]
+        ask_y = [float(k) for k in ask_data.values()]
+        bid_x, bid_y = zip(*sorted(zip(bid_x, bid_y)))
+        ask_x, ask_y = zip(*sorted(zip(ask_x, ask_y)))
+        print(bid_x, bid_y)
+        print(ask_x, ask_y)
         data_sources[ws_option_type][ws_expiry]['bid'].data = dict(x=bid_x, y=bid_y)
         data_sources[ws_option_type][ws_expiry]['ask'].data = dict(x=ask_x, y=ask_y)
 
