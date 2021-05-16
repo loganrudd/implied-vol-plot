@@ -3,6 +3,7 @@ from bokeh.layouts import column, row
 from bokeh.models import AjaxDataSource, ColumnDataSource, CustomJS, RadioButtonGroup
 from bokeh.plotting import figure
 from aredis import StrictRedis
+import arrow
 
 import asyncio
 from math import ceil
@@ -11,6 +12,7 @@ from functools import partial
 
 from process_message import process_message
 from data_provider import get_expirys, load_id_table
+from market import get_vol
 
 '''
 IV Chart Bokeh App
@@ -23,7 +25,7 @@ Live plot bid/mid/ask IV and BTC price
 '''
 
 # Redis setup
-r = StrictRedis(host='localhost')
+r = StrictRedis(host='localhost', decode_responses=True)
 p = r.pubsub()
 
 # Main Bokeh Doc
@@ -59,8 +61,8 @@ for option_type in ['call', 'put']:
             contract_strike = id_table[contract_id][1]
             contract_option_type = id_table[contract_id][2]
             if contract_option_type == option_type and contract_expiry == expiry:
-                data_sources[option_type][expiry]['bid'] = ColumnDataSource()
-                data_sources[option_type][expiry]['ask'] = ColumnDataSource()
+                data_sources[option_type][expiry]['bid'] = ColumnDataSource(dict(x=[], y=[]))
+                data_sources[option_type][expiry]['ask'] = ColumnDataSource(dict(x=[], y=[]))
 
 # Loop over expirations and make grid of plots
 # one plot per expiration (6 of them, two rows of 3)
@@ -71,6 +73,14 @@ for expiry_key, expiry_label in expirys:
     plot.yaxis.axis_label = 'IV%'
     plot.xaxis.axis_label = 'Strike'
     plot.ray(source=btc_price_source, color='cyan', length=0, angle=90, angle_units='deg')
+    for side in ['bid', 'ask']:
+        for option_type in ['put', 'call']:
+            source = data_sources[option_type][expiry_key][side]
+            if side == 'ask':
+                plot.inverted_triangle(source=source, color='red')
+            else:
+                plot.triangle(source=source, color='blue')
+
     plots[expiry_key] = plot
 
 
@@ -92,15 +102,49 @@ for row_k in rows.keys():
 layout = column(children=layout_rows)
 
 
-def update_data(msg):
+async def update_data(msg):
     data = process_message(msg)
+    now = arrow.now()
     if data:
-        print('data:', data)
+        # print('data:', data)
+        ws_option_type = data['type']
+        ws_expiry = data['expiry']
+        ws_strike = data['strike']
+        ws_bid = data['bid']
+        ws_ask = data['ask']
+        dte = (arrow.get(ws_expiry) - now).days
+
+        # TODO: actually calculate IV%
+        ul_price = float(btc_price_source.data['x'][0])
+        bid_iv = get_vol(dict(price=ws_bid,
+                              ul_price=ul_price,
+                              dte=dte,
+                              strike=ws_strike,
+                              flag=ws_option_type[0]))
+        ask_iv = get_vol(dict(price=ws_ask,
+                              ul_price=ul_price,
+                              dte=dte,
+                              strike=ws_strike,
+                              flag=ws_option_type[0]))
+        bid_key, ask_key = f'{ws_option_type}:{ws_expiry}:bid',\
+                           f'{ws_option_type}:{ws_expiry}:ask'
+
+        # set strike IV for bid and ask
+        await r.hset(bid_key, ws_strike, bid_iv)
+        await r.hset(ask_key, ws_strike, ask_iv)
+
+        bid_data = await r.hgetall(bid_key)
+        ask_data = await r.hgetall(ask_key)
+        bid_x = bid_data.keys()
+        bid_y = bid_data.values()
+        ask_x = ask_data.keys()
+        ask_y = ask_data.values()
+        data_sources[ws_option_type][ws_expiry]['bid'] = dict(x=bid_x, y=bid_y)
+        data_sources[ws_option_type][ws_expiry]['ask'] = dict(x=ask_x, y=ask_y)
 
 
 async def sub_listener():
     await p.psubscribe('*.1')
-
     while True:
         msg = await p.get_message()
         doc.add_next_tick_callback(partial(update_data, msg))

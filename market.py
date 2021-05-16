@@ -9,6 +9,7 @@ interest = 0.005
 
 
 def get_vol(attrs):
+    print(attrs)
     option_price = attrs['price']
     ul_price = attrs['ul_price']
     dte = attrs['dte']
