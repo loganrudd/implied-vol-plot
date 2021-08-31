@@ -13,6 +13,8 @@ from functools import partial
 from process_message import process_message
 from data_provider import get_expirys, load_id_table
 from market import get_vol
+import logging
+import logging.config
 
 '''
 IV Chart Bokeh App
@@ -23,6 +25,9 @@ Bokeh App Docs: https://docs.bokeh.org/en/latest/docs/user_guide/server.html
 
 Live plot bid/mid/ask IV and BTC price
 '''
+# logging setup
+logging.config.fileConfig('config/logging.conf')
+logger = logging.getLogger(__name__)
 
 # Redis setup
 r = StrictRedis(host='localhost', decode_responses=True)
@@ -91,7 +96,7 @@ for n_row in range(0, num_rows):
             expiry = expiry_keys[(n_row * 3) + n_column]
             rows[n_row].append(plots[expiry])
         except IndexError:
-            print('end of expirys')
+            logger.debug('end of expirys')
             continue
 
 layout_rows = [top_controls]
@@ -142,8 +147,12 @@ async def update_data(msg):
         ask_y = [float(k) for k in ask_data.values()]
         strikes, bid_y = zip(*sorted(zip(strikes, bid_y)))
         strikes, ask_y = zip(*sorted(zip(strikes, ask_y)))
-        data_sources[ws_option_type][ws_expiry]['bid'].data = dict(x=strikes, y=bid_y)
-        data_sources[ws_option_type][ws_expiry]['ask'].data = dict(x=strikes, y=ask_y)
+        if 'bid' in data_sources[ws_option_type][ws_expiry].keys():
+            data_sources[ws_option_type][ws_expiry]['bid'].data = \
+                dict(x=strikes, y=bid_y)
+        if 'ask' in data_sources[ws_option_type][ws_expiry].keys():
+            data_sources[ws_option_type][ws_expiry]['ask'].data = \
+                dict(x=strikes, y=ask_y)
 
 
 async def sub_listener():
