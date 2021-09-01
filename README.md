@@ -14,11 +14,12 @@ the options pricing model.
 
 ## Setup
 
-Install [Redis](https://redis.io/) and [RedisTimeSeries](https://oss.redislabs.com/redistimeseries/)
-Next, clone the repository and install the dependencies in requirements.txt (`pip -r requirements.txt` in a venv)
-Now run `ledgerx_ws.py` which is the script consuming the websocket stream from LedgerX and run 
+1) Install [Redis](https://redis.io/) and [RedisTimeSeries](https://oss.redislabs.com/redistimeseries/)
+2) Clone the repository and install the dependencies in requirements.txt (`pip -r requirements.txt` in a venv w/ python=3.7)
+3) Create a LedgerX api key (https://app.ledgerx.com/profile/api-keys) and copy to a file in root of project named "secret"
+4) Run `ledgerx_ws.py` (the script consuming the websocket stream from LedgerX) and then in another terminal window run 
 `bokeh serve --show iv_app.py` from the project root to start up the Bokeh server application and open a web browser to
-the local URL.
+the local URL (http://localhost:5006/iv_app by default).
 
 There are pre-cache files `contracts.pkl` and `id_table.json` which are loaded so no authenticated requests are needed.
 If you have a LedgerX account and API key, you can create a file named `secret` with the API key on the first line which
