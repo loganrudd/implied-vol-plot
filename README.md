@@ -77,6 +77,8 @@ There are pre-cache files `contracts.pkl` and `id_table.json` which are loaded s
 If you have a LedgerX account and API key, you can create a file named `secret` with the API key on the first line which
 will enable authenticated API queries.
 
+![screenshot of vol chart](https://i.imgur.com/PZv0VeH.png)
+
 ### Docker Install (WIP)
 Install docker: https://docs.docker.com/engine/install/
 
