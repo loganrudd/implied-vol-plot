@@ -10,12 +10,14 @@ r = redis.Redis(host=redis_host, decode_responses=True)
 
 # Lua script to do a conditional publish/store to TS (only clock > prev_clock)
 lua_cond_pub = """
+redis.call('SETNX', KEYS[1], 0)
 local prev_clock = redis.call('GETSET', KEYS[1], ARGV[1])
 local clock = tonumber(ARGV[1])
 prev_clock = tonumber(prev_clock)
 if(clock > prev_clock) then
     redis.call('PUBLISH', ARGV[2], ARGV[5])
-    redis.call('TS.MADD', KEYS[2], ARGV[3], KEYS[3], ARGV[4])
+    redis.call('TS.ADD', KEYS[2], '*', ARGV[3], 'DUPLICATE_POLICY LAST')
+    redis.call('TS.ADD', KEYS[3], '*', ARGV[4], 'DUPLICATE_POLICY LAST')
     return 1
 else
     return 0
@@ -26,6 +28,8 @@ cond_pub = r.register_script(lua_cond_pub)
 
 def on_message(ws, raw_message):
     message = json.loads(raw_message)
+    if message['type'] == 'heartbeat':
+        return
     try:
         ws_contract_id = message['contract_id']
         clock = message['clock']
