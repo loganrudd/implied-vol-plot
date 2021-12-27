@@ -16,8 +16,8 @@ local clock = tonumber(ARGV[1])
 prev_clock = tonumber(prev_clock)
 if(clock > prev_clock) then
     redis.call('PUBLISH', ARGV[2], ARGV[5])
-    redis.call('TS.ADD', KEYS[2], '*', ARGV[3], 'DUPLICATE_POLICY LAST')
-    redis.call('TS.ADD', KEYS[3], '*', ARGV[4], 'DUPLICATE_POLICY LAST')
+    redis.call('TS.ADD', KEYS[2], '*', ARGV[3], 'ON_DUPLICATE', 'LAST')
+    redis.call('TS.ADD', KEYS[3], '*', ARGV[4], 'ON_DUPLICATE', 'LAST')
     return 1
 else
     return 0
