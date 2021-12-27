@@ -74,8 +74,8 @@ The subscriber will recieve JSON encoded messages with the contract id, best bid
 the local URL (http://localhost:5006/iv_app by default).
 
 There are pre-cache files `contracts.pkl` and `id_table.json` which are loaded so no authenticated requests are needed.
-If you have a LedgerX account and API key, you can create a file named `secret` with the API key on the first line which
-will enable authenticated API queries.
+There is a small shell script `clear_cache.sh` that simple deletes these files, the app will automatically create them
+if missing, but will require a `secret` file with your LedgerX API key on the first line.
 
 ![screenshot of vol chart](https://i.imgur.com/PZv0VeH.png)
 

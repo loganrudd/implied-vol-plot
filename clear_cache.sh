@@ -1,0 +1,1 @@
+rm id_table.json contracts.pkl
