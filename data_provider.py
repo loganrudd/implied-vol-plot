@@ -4,7 +4,7 @@ import requests
 import json
 import arrow
 
-from market import get_vol, get_price
+from market import get_vol
 
 contracts = get_contracts()
 option_chain = contracts['option_chain']
@@ -109,15 +109,15 @@ def get_expiry_data(expiry_key, option_type):
         mid = (high_bid + low_ask) / 2
         mids.append((strike, mid))
 
-        # Loop over again, not sure how to avoid this because
-        # we need to find mid before filtering orders to remove outliers
+        # Loop over again to add best asks and bids to list
         for state in book_state:
             price = state['price']/100
-            if abs(price - mid) < (low_ask - high_bid) * 2:
-                if state['is_ask']:
-                    asks.append((price, strike, size))
-                else:
-                    bids.append((price, strike, size))
+
+            if price == low_ask and state['is_ask']:
+                asks.append((price, strike, size))
+
+            if price == high_bid and state['is_bid']:
+                bids.append((price, strike, size))
 
     # Mid line
     # Sort by strike price (x_axis)

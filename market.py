@@ -4,8 +4,8 @@ from py_lets_be_rational.exceptions import BelowIntrinsicException, AboveMaximum
 import numpy as np
 # http://www.vollib.org/documentation/python/1.0.2/apidoc/py_vollib.black_scholes.html
 
-# Risk free interest rate 0.5%
-interest = 0.005
+# Risk free interest rate 0.1%
+interest = 0.001
 
 
 def get_vol(attrs):

@@ -39,7 +39,9 @@ def process_message(msg):
             raw_api_data = get_contract(contract_id)
             if raw_api_data:
                 api_data = raw_api_data['data']
-                if api_data['derivative_type'] != 'options_contract':
+
+                # Drop futures, swaps and ETH contracts
+                if api_data['derivative_type'] != 'options_contract' or api_data['underlying_asset'] != 'CBTC':
                     print(f'ignoring:{contract_id}')
                     ignore_ids.add(contract_id)
                     print(ignore_ids)

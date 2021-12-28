@@ -51,8 +51,8 @@ def on_error(ws, error):
     print(error)
 
 
-def on_close(ws):
-    print('### closed ###')
+def on_close(ws, close_status_code, close_msg):
+    print('### closed ###', close_status_code, close_msg)
 
 
 def on_open(ws):
