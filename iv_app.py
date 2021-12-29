@@ -61,9 +61,11 @@ id_table = load_id_table()
 for option_type in ['call', 'put']:
     for expiry in expiry_keys:
         for contract_id in id_table.keys():
-            contract_expiry = id_table[contract_id][0]
-            contract_strike = id_table[contract_id][1]
-            contract_option_type = id_table[contract_id][2]
+            if id_table[contract_id][0] == 'ETH':
+                continue
+            contract_expiry = id_table[contract_id][1]
+            contract_strike = id_table[contract_id][2]
+            contract_option_type = id_table[contract_id][3]
             if contract_option_type == option_type and contract_expiry == expiry:
                 data_sources[option_type][expiry]['bid'] = ColumnDataSource(dict(x=[], y=[]))
                 data_sources[option_type][expiry]['ask'] = ColumnDataSource(dict(x=[], y=[]))
@@ -111,12 +113,16 @@ async def update_data(msg):
     now = arrow.now()
     if data:
         # print('data:', data)
+        ws_underlying_asset = data['underlying_asset']
         ws_option_type = data['type']
         ws_expiry = data['expiry']
         ws_strike = data['strike'] / 100
         ws_bid = data['bid']
         ws_ask = data['ask']
         dte = (arrow.get(ws_expiry) - now).days
+
+        if ws_underlying_asset == 'ETH':
+            return
 
         try:
             ul_price = float(btc_price_source.data['x'][0])

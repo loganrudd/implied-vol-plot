@@ -19,6 +19,7 @@ def process_message(msg):
 
         contract_update = {
             'contract_id': contract_id,
+            'underlying_asset': None,
             'expiry': None,
             'strike': None,
             'type': None,
@@ -30,7 +31,8 @@ def process_message(msg):
             return None
 
         if contract_id in id_table.keys():
-            expiry, strike, option_type = id_table[contract_id]
+            underlying_asset, expiry, strike, option_type = id_table[contract_id]
+            contract_update['underlying_asset'] = underlying_asset
             contract_update['expiry'] = expiry
             contract_update['strike'] = strike
             contract_update['type'] = option_type
@@ -52,7 +54,9 @@ def process_message(msg):
                 expiry = api_data['date_expires']
                 strike = api_data['strike_price']
                 option_type = api_data['type']
+                underlying_asset = api_data['underlying_asset']
                 id_table[contract_id] = (expiry, strike, option_type)
+                contract_update['underlying_asset'] = underlying_asset
                 contract_update['expiry'] = expiry
                 contract_update['strike'] = strike
                 contract_update['type'] = option_type

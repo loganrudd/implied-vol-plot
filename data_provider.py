@@ -29,7 +29,8 @@ def write_id_table(id_table=None):
         options = get_contracts(active=True)['option_chain']
         for expiry in options.keys():
             for option in options[expiry]:
-                id_table[option['id']] = (option['date_expires'], option['strike_price'], option['type'])
+                id_table[option['id']] = (option['underlying_asset'], option['date_expires'],
+                                          option['strike_price'], option['type'])
 
     with open('id_table.json', 'w') as f:
         f.write(json.dumps(id_table))
